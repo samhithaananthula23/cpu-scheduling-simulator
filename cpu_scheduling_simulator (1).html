@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CPU Scheduling Visual Simulator</title>
+<style>
+:root{--bg:#f4f7fb;--panel:#fff;--ink:#172033;--muted:#667085;--line:#e5eaf2;--blue:#315efb;--blue2:#eaf0ff;--green:#12805c;--orange:#c56a12;--shadow:0 8px 28px rgba(24,39,75,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+header{background:linear-gradient(120deg,#18264b,#315efb);color:white;padding:28px max(22px,calc((100% - 1180px)/2)) 30px}
+header .eyebrow{font-size:12px;letter-spacing:.13em;text-transform:uppercase;opacity:.8;font-weight:700}h1{font-size:clamp(25px,4vw,36px);margin:7px 0}header p{margin:0;color:#e0e8ff;max-width:760px}
+main{max-width:1180px;margin:22px auto;padding:0 18px 48px}.layout{display:grid;grid-template-columns:350px 1fr;gap:18px;align-items:start}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:19px;box-shadow:var(--shadow);margin-bottom:18px}
+h2{font-size:18px;margin:0 0 14px}h3{font-size:15px;margin:18px 0 8px}label{display:block;font-weight:650;font-size:13px;margin:10px 0 5px}
+input,select,button{font:inherit}input,select{width:100%;padding:10px 11px;border:1px solid #d5dce8;border-radius:9px;background:white;color:var(--ink);outline:none}
+input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px #315efb1c}
+.fields{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}.btn{border:0;border-radius:9px;padding:10px 13px;font-weight:700;cursor:pointer;transition:.15s}.btn:hover{transform:translateY(-1px);filter:brightness(.97)}.primary{background:var(--blue);color:#fff}.soft{background:var(--blue2);color:#2448c7}.danger{background:#fff0ef;color:#b42318}.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.btnrow .btn{flex:1}
+.hint{font-size:12px;color:var(--muted);margin:8px 0 0}.process-list{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}.chip{background:#f0f3f9;border:1px solid #e0e6ef;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:650}
+.toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}.stat{background:#f7f9fd;border:1px solid var(--line);padding:11px;border-radius:11px}.stat small{display:block;color:var(--muted);font-size:11px}.stat strong{font-size:20px}
+.chart-wrap{overflow-x:auto;padding:10px 2px 5px}.gantt{display:flex;min-width:max-content;align-items:stretch;border:1px solid #d9e0ec;border-radius:10px;overflow:hidden;background:#fafbfe}.gantt-block{min-width:65px;height:76px;display:flex;flex-direction:column;justify-content:center;align-items:center;border-right:2px solid white;color:#15213a;font-weight:750;position:relative;transition:.2s}.gantt-block span{font-size:12px}.gantt-block small{font-size:10px;font-weight:600;opacity:.8}.gantt-block.active{outline:3px solid #f59e0b;outline-offset:-3px;filter:saturate(1.3)}.timeline{display:flex;min-width:max-content;justify-content:space-between;color:var(--muted);font-size:11px;padding:5px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:center;padding:9px 7px;border-bottom:1px solid var(--line)}th{color:#475467;background:#f8faff;font-size:11px;text-transform:uppercase;letter-spacing:.04em}td:first-child,th:first-child{text-align:left}
+.log{max-height:235px;overflow:auto;padding:0;margin:0;list-style:none}.log li{padding:8px 10px;border-bottom:1px solid #edf0f5;font-size:13px}.log li b{color:var(--blue);margin-right:7px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tab{border:1px solid var(--line);background:#fff;color:#475467;border-radius:9px;padding:8px 12px;font-weight:650;cursor:pointer}.tab.active{background:var(--blue2);border-color:#cbd7ff;color:#2448c7}.content{display:none}.content.active{display:block}.content p,.content li{color:#475467}.content pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#111827;color:#e5edff;padding:14px;border-radius:10px;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace}
+.faq details{border-bottom:1px solid var(--line);padding:10px 0}.faq summary{font-weight:700;cursor:pointer}.faq p{margin:7px 0 0}
+.empty{padding:25px;text-align:center;color:var(--muted);background:#fafbfe;border:1px dashed #d7deea;border-radius:10px}
+@media(max-width:850px){.layout{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}}@media(max-width:480px){header{padding:22px 18px}.panel{padding:15px}.stats{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr}.btnrow{flex-direction:column}}
+</style>
+</head>
+<body>
+<header><div class="eyebrow">Operating Systems · Lab learning tool</div><h1>CPU Scheduling Visual Simulator</h1><p>Add processes, run scheduling algorithms, and understand the Gantt chart, completion time, turnaround time and waiting time step by step.</p></header>
+<main>
+<div class="layout">
+<aside>
+<section class="panel">
+<h2>1. Add processes</h2>
+<div class="fields">
+<div><label for="pid">Process ID</label><input id="pid" value="P1" maxlength="8"></div>
+<div><label for="arrival">Arrival time</label><input id="arrival" type="number" min="0" value="0"></div>
+<div><label for="burst">Burst time</label><input id="burst" type="number" min="1" value="5"></div>
+<div><label for="priority">Priority</label><input id="priority" type="number" min="1" value="1"></div>
+</div>
+<div class="btnrow"><button class="btn primary" id="addBtn">＋ Add process</button><button class="btn danger" id="clearBtn">Clear all</button></div>
+<p class="hint">Priority 1 is the highest priority. Process IDs must be unique.</p>
+<div id="processList" class="process-list"></div>
+</section>
+<section class="panel">
+<h2>2. Choose algorithm</h2>
+<label for="algorithm">Scheduling algorithm</label>
+<select id="algorithm">
+<option value="fcfs">FCFS — First Come First Served</option>
+<option value="sjf">SJF — Shortest Job First (non-preemptive)</option>
+<option value="priority">Priority (non-preemptive)</option>
+<option value="rr">Round Robin</option>
+<option value="mlfq">Multilevel Feedback Queue (2 levels)</option>
+</select>
+<div id="quantumWrap"><label for="quantum">Time quantum (Round Robin)</label><input id="quantum" type="number" min="1" value="2"></div>
+<div class="btnrow"><button class="btn primary" id="runBtn">▶ Run simulation</button><button class="btn soft" id="stepBtn">Next step</button></div>
+<p class="hint">Run shows the complete result. Next step highlights each scheduled CPU segment.</p>
+</section>
+<section class="panel">
+<h2>Operation log</h2><ol id="log" class="log"><li>Add processes and run an algorithm to begin.</li></ol>
+</section>
+</aside>
+<div>
+<section class="panel">
+<h2>Gantt chart</h2>
+<div id="chart" class="empty">Your Gantt chart will appear here after you run a scheduling algorithm.</div>
+<div class="stats">
+<div class="stat"><small>Average waiting time</small><strong id="avgWait">—</strong></div>
+<div class="stat"><small>Average turnaround time</small><strong id="avgTat">—</strong></div>
+<div class="stat"><small>Total CPU time</small><strong id="totalTime">—</strong></div>
+</div>
+</section>
+<section class="panel">
+<h2>Process calculation table</h2>
+<div style="overflow-x:auto"><table><thead><tr><th>Process</th><th>AT</th><th>BT</th><th>CT</th><th>TAT</th><th>WT</th></tr></thead><tbody id="results"><tr><td colspan="6" style="text-align:center;color:#667085">No results yet.</td></tr></tbody></table></div>
+<p class="hint">AT = Arrival Time · BT = Burst Time · CT = Completion Time · TAT = CT − AT · WT = TAT − BT</p>
+</section>
+<section class="panel">
+<h2>Lab procedure and reference</h2>
+<div class="tabs">
+<button class="tab active" data-tab="aim">Aim</button><button class="tab" data-tab="pseudo">Pseudo code</button><button class="tab" data-tab="c-code">C code</button><button class="tab" data-tab="io">Input / Output</button><button class="tab" data-tab="faq">FAQ</button>
+</div>
+<div class="content active" id="aim"><h3>Aim</h3><p>To simulate CPU scheduling algorithms and calculate Completion Time (CT), Turnaround Time (TAT), Waiting Time (WT), and average waiting and turnaround times.</p><h3>Procedure</h3><ol><li>Enter process ID, arrival time and burst time.</li><li>Select a scheduling algorithm.</li><li>Enter the time quantum when using Round Robin.</li><li>Run the simulation and observe the Gantt chart.</li><li>Verify CT, TAT and WT in the result table.</li></ol></div>
+<div class="content" id="pseudo"><h3>FCFS pseudo code</h3><pre>1. Read n processes with arrival time and burst time.
+2. Sort processes by arrival time.
+3. Set current_time = 0.
+4. For each process:
+   If current_time < arrival_time:
+       current_time = arrival_time
+   Start = current_time
+   current_time = current_time + burst_time
+   CT = current_time
+   TAT = CT - arrival_time
+   WT = TAT - burst_time
+5. Calculate average WT and average TAT.
+6. Display the Gantt chart and process table.</pre><h3>Key formulas</h3><p><b>CT</b> = time at which a process finishes. <b>TAT</b> = CT − AT. <b>WT</b> = TAT − BT.</p></div>
+<div class="content" id="c-code"><h3>Sample C program — FCFS</h3><p>This compact reference program implements non-preemptive FCFS. It sorts by arrival time and prints the main timing values.</p><pre>#include &lt;stdio.h&gt;
+struct Process {
+    int id, at, bt, ct, tat, wt;
+};
+
+int main() {
+    struct Process p[20], temp;
+    int n, i, j, time = 0;
+    float avgWT = 0, avgTAT = 0;
+
+    printf("Enter number of processes: ");
+    scanf("%d", &amp;n);
+
+    for (i = 0; i &lt; n; i++) {
+        p[i].id = i + 1;
+        printf("Enter AT and BT for P%d: ", i + 1);
+        scanf("%d%d", &amp;p[i].at, &amp;p[i].bt);
+    }
+
+    /* Sort by arrival time */
+    for (i = 0; i &lt; n - 1; i++)
+        for (j = i + 1; j &lt; n; j++)
+            if (p[i].at &gt; p[j].at) {
+                temp = p[i]; p[i] = p[j]; p[j] = temp;
+            }
+
+    for (i = 0; i &lt; n; i++) {
+        if (time &lt; p[i].at) time = p[i].at;
+        time += p[i].bt;
+        p[i].ct = time;
+        p[i].tat = p[i].ct - p[i].at;
+        p[i].wt = p[i].tat - p[i].bt;
+        avgWT += p[i].wt;
+        avgTAT += p[i].tat;
+    }
+
+    printf("\\nPID\\tAT\\tBT\\tCT\\tTAT\\tWT\\n");
+    for (i = 0; i &lt; n; i++)
+        printf("P%d\\t%d\\t%d\\t%d\\t%d\\t%d\\n",
+            p[i].id, p[i].at, p[i].bt,
+            p[i].ct, p[i].tat, p[i].wt);
+
+    printf("Average WT = %.2f\\n", avgWT / n);
+    printf("Average TAT = %.2f\\n", avgTAT / n);
+    return 0;
+}</pre></div>
+<div class="content" id="io"><h3>Sample input</h3><pre>Number of processes: 3
+P1: Arrival time = 0, Burst time = 5
+P2: Arrival time = 1, Burst time = 3
+P3: Arrival time = 2, Burst time = 1</pre><h3>Expected FCFS output</h3><pre>Gantt chart: | P1 | P2 | P3 |
+Time:          0    5    8    9
+
+PID  AT  BT  CT  TAT  WT
+P1   0   5   5    5    0
+P2   1   3   8    7    4
+P3   2   1   9    7    6
+
+Average WT  = 3.33
+Average TAT = 6.33</pre><p>Use the simulator to verify the output and compare other algorithms.</p></div>
+<div class="content faq" id="faq"><h3>Frequently asked questions</h3><details><summary>What is CPU scheduling?</summary><p>It is the method used by the operating system to select a process from the ready queue and allocate the CPU to it.</p></details><details><summary>What is the difference between TAT and WT?</summary><p>Turnaround time is the total time from arrival to completion. Waiting time is the time spent waiting in the ready queue.</p></details><details><summary>Which algorithm can cause starvation?</summary><p>SJF and priority scheduling can cause starvation when long or low-priority processes keep getting postponed.</p></details><details><summary>Why is Round Robin used?</summary><p>It gives each ready process a fixed time quantum, making it useful for time-sharing systems.</p></details><details><summary>What is a Gantt chart?</summary><p>It is a timeline showing which process uses the CPU during each time interval.</p></details><details><summary>What does MLFQ mean here?</summary><p>This teaching model uses two queues: a high-priority queue with a short quantum and a lower-priority queue with a longer quantum. It is a simplified MLFQ model, not every OS-specific variant.</p></details></div>
+</section>
+</div>
+</div>
+</main>
+<script>
+const $ = id => document.getElementById(id);
+let processes = [], segments = [], stepIndex = 0, results = [];
+const colors = ['#c9d8ff','#c8eee0','#ffe1bd','#e6d5ff','#ffd4df','#d5edf5','#f4e6a8'];
+function addLog(message){const li=document.createElement('li');li.innerHTML='<b>'+String($('log').children.length)+'.</b> '+message;$('log').prepend(li);}
+function renderProcesses(){
+ const box=$('processList');box.innerHTML='';
+ if(!processes.length){box.textContent='No processes added yet.';box.className='process-list hint';return;}
+ box.className='process-list';
+ processes.forEach(p=>{const s=document.createElement('span');s.className='chip';s.textContent=`${p.id} · AT ${p.at} · BT ${p.bt}`;box.appendChild(s);});
+}
+$('addBtn').onclick=()=>{
+ const id=$('pid').value.trim(),at=Number($('arrival').value),bt=Number($('burst').value),priority=Number($('priority').value);
+ if(!id||processes.some(p=>p.id===id)){alert('Enter a unique process ID.');return;}
+ if(!Number.isInteger(at)||at<0||!Number.isInteger(bt)||bt<1||!Number.isInteger(priority)||priority<1){alert('Arrival time must be 0 or more. Burst time and priority must be positive integers.');return;}
+ processes.push({id,at,bt,priority});renderProcesses();addLog(`Process ${id} added with arrival time ${at} and burst time ${bt}.`);
+ $('pid').value='P'+(processes.length+1);$('arrival').value='0';$('burst').value='5';
+};
+$('clearBtn').onclick=()=>{processes=[];segments=[];results=[];stepIndex=0;renderProcesses();$('chart').className='empty';$('chart').textContent='Your Gantt chart will appear here after you run a scheduling algorithm.';$('results').innerHTML='<tr><td colspan="6">No results yet.</td></tr>';$('log').innerHTML='<li>All processes cleared.</li>';$('avgWait').textContent=$('avgTat').textContent=$('totalTime').textContent='—';};
+$('algorithm').onchange=()=>{$('quantumWrap').style.display=$('algorithm').value==='rr'?'block':'none';};
+function buildSchedule(){
+ const alg=$('algorithm').value, list=processes.map(p=>({...p,remaining:p.bt})), out=[];let time=0;
+ const add=(p,start,end)=>{if(end>start)out.push({id:p.id,start,end,color:colors[processes.findIndex(x=>x.id===p.id)%colors.length]});};
+ if(alg==='fcfs'||alg==='sjf'||alg==='priority'){
+  const pending=[...list];while(pending.length){const ready=pending.filter(p=>p.at<=time);
+   if(!ready.length){const next=Math.min(...pending.map(p=>p.at));if(next>time)out.push({id:'Idle',start:time,end:next,color:'#e8edf4'});time=next;continue;}
+   ready.sort((a,b)=>alg==='fcfs'?(a.at-b.at||processes.indexOf(processes.find(x=>x.id===a.id))-processes.indexOf(processes.find(x=>x.id===b.id))):alg==='sjf'?(a.bt-b.bt||a.at-b.at):(a.priority-b.priority||a.at-b.at));
+   const p=ready[0],start=time;time+=p.bt;add(p,start,time);p.ct=time;p.tat=p.ct-p.at;p.wt=p.tat-p.bt;pending.splice(pending.indexOf(p),1);
+  }
+ }else if(alg==='rr'){
+  const q=Number($('quantum').value);if(!Number.isInteger(q)||q<1){alert('Time quantum must be a positive integer.');return null;}
+  const pending=[...list].sort((a,b)=>a.at-b.at),queue=[];let i=0;
+  while(i<pending.length||queue.length){if(!queue.length&&i<pending.length&&time<pending[i].at){out.push({id:'Idle',start:time,end:pending[i].at,color:'#e8edf4'});time=pending[i].at;}
+   while(i<pending.length&&pending[i].at<=time)queue.push(pending[i++]);
+   const p=queue.shift(),run=Math.min(q,p.remaining),start=time;time+=run;p.remaining-=run;add(p,start,time);
+   while(i<pending.length&&pending[i].at<=time)queue.push(pending[i++]);
+   if(p.remaining>0)queue.push(p);else{p.ct=time;p.tat=p.ct-p.at;p.wt=p.tat-p.bt;}
+  }
+ }else{
+  // Simplified two-level MLFQ: Q0 quantum 2; demoted jobs use Q1 quantum 4.
+  const pending=[...list].sort((a,b)=>a.at-b.at),q0=[],q1=[];let i=0;
+  while(i<pending.length||q0.length||q1.length){
+   if(!q0.length&&!q1.length&&i<pending.length&&time<pending[i].at){out.push({id:'Idle',start:time,end:pending[i].at,color:'#e8edf4'});time=pending[i].at;}
+   while(i<pending.length&&pending[i].at<=time)q0.push(pending[i++]);
+   const queue=q0.length?q0:q1,p=queue.shift(),quantum=queue===q0?2:4,run=Math.min(quantum,p.remaining),start=time;
+   time+=run;p.remaining-=run;add(p,start,time);
+   while(i<pending.length&&pending[i].at<=time)q0.push(pending[i++]);
+   if(p.remaining>0){if(queue===q0)q1.push(p);else q1.push(p);}else{p.ct=time;p.tat=p.ct-p.at;p.wt=p.tat-p.bt;}
+  }
+ }
+ return {out,done:list};
+}
+function renderChart(highlight=-1){
+ const chart=$('chart');chart.className='';chart.innerHTML='';
+ if(!segments.length){chart.className='empty';chart.textContent='No scheduled CPU segments.';return;}
+ const wrap=document.createElement('div');wrap.className='chart-wrap';const gantt=document.createElement('div');gantt.className='gantt';
+ const total=Math.max(1,segments[segments.length-1].end);
+ segments.forEach((s,i)=>{const b=document.createElement('div');b.className='gantt-block'+(i===highlight?' active':'');b.style.width=Math.max(65,(s.end-s.start)*65)+'px';b.style.background=s.color;b.innerHTML='<b>'+s.id+'</b><small>'+s.start+' – '+s.end+'</small>';gantt.appendChild(b);});
+ const times=document.createElement('div');times.className='timeline';times.style.width=gantt.style.width||'100%';times.innerHTML=segments.map(s=>'<span>'+s.start+'</span>').join('')+'<span>'+segments[segments.length-1].end+'</span>';
+ wrap.append(gantt,times);chart.appendChild(wrap);
+}
+function showResults(done){
+ const sorted=[...done].sort((a,b)=>a.id.localeCompare(b.id,undefined,{numeric:true}));
+ $('results').innerHTML=sorted.map(p=>`<tr><td><b>${p.id}</b></td><td>${p.at}</td><td>${p.bt}</td><td>${p.ct}</td><td>${p.tat}</td><td>${p.wt}</td></tr>`).join('');
+ const avgW=done.reduce((s,p)=>s+p.wt,0)/done.length,avgT=done.reduce((s,p)=>s+p.tat,0)/done.length;
+ $('avgWait').textContent=avgW.toFixed(2);$('avgTat').textContent=avgT.toFixed(2);$('totalTime').textContent=segments.length?segments[segments.length-1].end:'0';
+}
+function run(){
+ if(!processes.length){alert('Add at least one process first.');return;}
+ const schedule=buildSchedule();if(!schedule)return;segments=schedule.out;results=schedule.done;stepIndex=0;renderChart(-1);showResults(results);
+ $('log').innerHTML='';addLog('Scheduling started using '+$('algorithm').selectedOptions[0].text+'.');
+ segments.forEach(s=>addLog(`${s.id==='Idle'?'CPU is idle':s.id+' gets the CPU'} from time ${s.start} to ${s.end}.`));
+ results.forEach(p=>addLog(`${p.id} completes at ${p.ct}. TAT = ${p.ct} − ${p.at} = ${p.tat}; WT = ${p.tat} − ${p.bt} = ${p.wt}.`));
+ addLog('All processes have completed. Average waiting time is '+$('avgWait').textContent+' and average turnaround time is '+$('avgTat').textContent+'.');
+}
+$('runBtn').onclick=run;
+$('stepBtn').onclick=()=>{if(!segments.length){run();if(!segments.length)return;}if(stepIndex>=segments.length)stepIndex=0;renderChart(stepIndex);const s=segments[stepIndex];addLog(`Step ${stepIndex+1}: ${s.id==='Idle'?'CPU remains idle':s.id+' executes'} during ${s.start} to ${s.end}.`);stepIndex++;};
+document.querySelectorAll('.tab').forEach(btn=>btn.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x===btn));document.querySelectorAll('.content').forEach(x=>x.classList.toggle('active',x.id===btn.dataset.tab));});
+renderProcesses();$('quantumWrap').style.display='none';
+</script>
+</body>
+</html>
